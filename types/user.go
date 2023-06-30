@@ -42,7 +42,7 @@ func (params CreateUserParams) Validate() []string {
 		errors = append(errors, fmt.Sprintf("password length should be at least %d characters", minPasswordLen))
 	}
 	if !isEmailValid(params.Email) {
-		errors = append(errors, fmt.Sprintf("email is not valid"))
+		errors = append(errors, "email is not valid")
 	}
 
 	return errors
