@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lets-goo/hotel-reservation/db"
 	"github.com/lets-goo/hotel-reservation/types"
@@ -51,4 +53,28 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(insertedUser)
+}
+
+func (h *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	err := h.userStore.DeleteUser(c.Context(), id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(map[string]string{"deleted": id})
+}
+
+func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
+	var (
+		params types.UpdateUserParams
+		userID = c.Params("id")
+	)
+	if err := c.BodyParser(&params); err != nil {
+		return err
+	}
+	res, err := h.userStore.UpdateUser(c.Context(), userID, params)
+	if err != nil {
+		return err
+	}
+	return c.JSON(map[string]string{"updated": userID, "rowCountUpdated": fmt.Sprint(res)})
 }

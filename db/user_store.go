@@ -15,6 +15,8 @@ type UserStore interface {
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	CreateUser(context.Context, *types.User) (*types.User, error)
+	DeleteUser(context.Context, string) error
+	UpdateUser(context.Context, string, types.UpdateUserParams) (int64, error)
 }
 
 type MongoUserStore struct {
@@ -39,8 +41,7 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 	var dbuser types.User
 	err = s.collection.FindOne(ctx, bson.M{"_id": oid}).Decode(&dbuser)
 	if err == mongo.ErrNoDocuments {
-		fmt.Printf("No document was found with the title %s\n", id)
-		return nil, err
+		return nil, fmt.Errorf("no document was found with id: %s", id)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -69,6 +70,36 @@ func (s *MongoUserStore) CreateUser(ctx context.Context, user *types.User) (*typ
 
 	user.ID = cur.InsertedID.(primitive.ObjectID)
 	return user, nil
+}
+
+func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	//TODO: to handle if the user is not deleted, maybe log it, or???
+	_, err = s.collection.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MongoUserStore) UpdateUser(ctx context.Context, filter string, params types.UpdateUserParams) (int64, error) {
+	oid, err := primitive.ObjectIDFromHex(filter)
+	if err != nil {
+		return 0, err
+	}
+
+	id := bson.M{"_id": oid}
+	values := bson.D{{Key: "$set", Value: params.ToBSON()}}
+	res, err := s.collection.UpdateOne(ctx, id, values)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println(res)
+	//TODO: to handle if the user is not updated, maybe log it, or???
+	return res.ModifiedCount, nil
 }
 
 type PostgresUserStore struct {
