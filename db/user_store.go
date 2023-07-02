@@ -11,7 +11,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Dropper interface {
+	Drop(context.Context) error
+}
+
 type UserStore interface {
+	Dropper
+
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	CreateUser(context.Context, *types.User) (*types.User, error)
@@ -30,6 +36,11 @@ func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
 		client:     client,
 		collection: coll,
 	}
+}
+
+func (s *MongoUserStore) Drop(ctx context.Context) error {
+	fmt.Println("--- dropping user test collection ---")
+	return s.collection.Drop(ctx)
 }
 
 func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.User, error) {
@@ -97,7 +108,6 @@ func (s *MongoUserStore) UpdateUser(ctx context.Context, filter string, params t
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println(res)
 	//TODO: to handle if the user is not updated, maybe log it, or???
 	return res.ModifiedCount, nil
 }
