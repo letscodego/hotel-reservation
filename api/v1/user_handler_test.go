@@ -89,7 +89,7 @@ func TestGetUser(t *testing.T) {
 	app := fiber.New()
 	userHandler := NewUserHandler(testdb.UserStore)
 	app.Post("/", userHandler.HandlePostUser)
-	app.Get("/:id", userHandler.HandleGetUser)
+	app.Get("/hotel/:id", userHandler.HandleGetUser)
 
 	params := types.CreateUserParams{
 		FirstName: "Michel",
@@ -113,10 +113,10 @@ func TestGetUser(t *testing.T) {
 		t.Error(err)
 	}
 
-	fmt.Println(string(user.ID.Hex()))
+	fmt.Println("/hotel/" + user.ID.Hex())
 	fmt.Println(user.ID.Hex())
 
-	get_user_req := httptest.NewRequest("GET", "/"+string(user.ID.Hex()), nil)
+	get_user_req := httptest.NewRequest("GET", "/hotel/"+user.ID.Hex(), nil)
 	resp, _ = app.Test(get_user_req)
 
 	var user_from_db types.User

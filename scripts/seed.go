@@ -19,11 +19,12 @@ var (
 	roomStore  db.RoomStore
 )
 
-func seedHotel(name, location string) {
+func seedHotel(name, location string, rating int) {
 	hotel := types.Hotel{
 		Name:     name,
 		Location: location,
 		Rooms:    []primitive.ObjectID{},
+		Rating:   rating,
 	}
 
 	rooms := []types.Room{
@@ -64,8 +65,8 @@ func seedHotel(name, location string) {
 }
 
 func main() {
-	seedHotel("California", "USA")
-	seedHotel("Blue", "UK")
+	seedHotel("California", "USA", 5)
+	seedHotel("Blue", "UK", 5)
 }
 
 func init() {
