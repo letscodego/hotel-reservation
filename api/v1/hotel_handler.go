@@ -9,20 +9,18 @@ import (
 )
 
 type HotelHandler struct {
-	hotelStore db.HotelStore
-	roomStore  db.RoomStore
+	store *db.Store
 }
 
-func NewHotelHandler(hotelStore db.HotelStore, roomStore db.RoomStore) *HotelHandler {
+func NewHotelHandler(store *db.Store) *HotelHandler {
 	return &HotelHandler{
-		hotelStore: hotelStore,
-		roomStore:  roomStore,
+		store: store,
 	}
 }
 
 func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 	id := c.Params("id")
-	hotel, err := h.hotelStore.GetHotelByID(c.Context(), id)
+	hotel, err := h.store.Hotel.GetHotelByID(c.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -34,12 +32,22 @@ type HotelQueryParams struct {
 	Rating int
 }
 
-func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
-	var qparams HotelQueryParams
-	if err := c.QueryParser(&qparams); err != nil {
+func (h *HotelHandler) HandleGetHotelRooms(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	rooms, err := h.store.Room.GetRooms(c.Context(), id)
+	if err != nil {
 		return err
 	}
-	hotels, err := h.hotelStore.GetHotels(c.Context())
+	return c.JSON(rooms)
+}
+
+func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
+	// var qparams HotelQueryParams
+	// if err := c.QueryParser(&qparams); err != nil {
+	// 	return err
+	// }
+	hotels, err := h.store.Hotel.GetHotels(c.Context())
 	if err != nil {
 		return err
 	}
@@ -58,7 +66,7 @@ func (h *HotelHandler) HandlePostHotel(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	insertedHotel, err := h.hotelStore.CreateHotel(c.Context(), hotel)
+	insertedHotel, err := h.store.Hotel.CreateHotel(c.Context(), hotel)
 	if err != nil {
 		return err
 	}
@@ -67,7 +75,7 @@ func (h *HotelHandler) HandlePostHotel(c *fiber.Ctx) error {
 
 func (h *HotelHandler) HandleDeleteHotel(c *fiber.Ctx) error {
 	id := c.Params("id")
-	err := h.hotelStore.DeleteHotel(c.Context(), id)
+	err := h.store.Hotel.DeleteHotel(c.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -82,7 +90,7 @@ func (h *HotelHandler) HandlePutHotel(c *fiber.Ctx) error {
 	if err := c.BodyParser(&params); err != nil {
 		return err
 	}
-	res, err := h.hotelStore.UpdateHotel(c.Context(), hotelID, params)
+	res, err := h.store.Hotel.UpdateHotel(c.Context(), hotelID, params)
 	if err != nil {
 		return err
 	}
