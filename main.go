@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/lets-goo/hotel-reservation/api/v1"
+	"github.com/lets-goo/hotel-reservation/api/v1/middleware"
 	"github.com/lets-goo/hotel-reservation/db"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -42,12 +43,17 @@ func main() {
 		}
 		userHandler  = api.NewUserHandler(userStore)
 		hotelHandler = api.NewHotelHandler(store)
+		authHandler  = api.NewAuthHandler(userStore)
 		app          = fiber.New(config)
-		apiv1        = app.Group("api/v1")
+		auth         = app.Group("/api")
+		apiv1        = app.Group("/api/v1", middleware.JWTAuthentication)
 	)
 
 	listenAdd := flag.String("listenAdd", ":5000", "The listen address of the API server")
 	flag.Parse()
+
+	//auth handlers
+	auth.Post("/auth", authHandler.HandleAuthenticate)
 
 	// user handlers
 	apiv1.Get("/user", userHandler.HandleGetUsers)

@@ -23,6 +23,7 @@ type UserStore interface {
 	CreateUser(context.Context, *types.User) (*types.User, error)
 	DeleteUser(context.Context, string) error
 	UpdateUser(context.Context, string, types.UpdateUserParams) (int64, error)
+	GetUserByEmail(context.Context, string) (*types.User, error)
 }
 
 type MongoUserStore struct {
@@ -110,6 +111,18 @@ func (s *MongoUserStore) UpdateUser(ctx context.Context, filter string, params t
 	}
 	//TODO: to handle if the user is not updated, maybe log it, or???
 	return res.ModifiedCount, nil
+}
+
+func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
+	var dbuser types.User
+	err := s.collection.FindOne(ctx, bson.M{"email": email}).Decode(&dbuser)
+	if err == mongo.ErrNoDocuments {
+		return nil, fmt.Errorf("no document was found with email: %s", email)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &dbuser, nil
 }
 
 type PostgresUserStore struct {

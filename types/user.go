@@ -83,6 +83,10 @@ func isEmailValid(e string) bool {
 	return emailRegex.MatchString(e)
 }
 
+func IsPasswordValid(encryptedPassword, password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(encryptedPassword), []byte(password)) == nil
+}
+
 func NewUserFromParams(params CreateUserParams) (*User, error) {
 	encpw, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcryptCost)
 	if err != nil {
