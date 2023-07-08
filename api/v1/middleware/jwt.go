@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -12,29 +14,56 @@ func JWTAuthentication(c *fiber.Ctx) error {
 	if !ok {
 		return fmt.Errorf("unauthorized")
 	}
-	if err := parseJWTToken(token); err != nil {
+	claims, err := validateJWTToken(token)
+	if err != nil {
 		return err
 	}
-	fmt.Println("toker:", token)
-	return nil
+	expirationTime, err := claims.GetExpirationTime()
+	if err != nil {
+		return err
+	}
+	if time.Now().After(expirationTime.Time) {
+		fmt.Println("failed to parse JWT token", err)
+		return fmt.Errorf("token is expired")
+	}
+	return c.Next()
 }
 
-func parseJWTToken(tokenString string) error {
+func validateJWTToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := parsToken(tokenString)
+	if err != nil {
+		fmt.Println("failed to parse JWT token ", err)
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	return claims, nil
+}
+
+func parsToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			fmt.Println("invalid signing method", token.Header["alg"])
 			return nil, fmt.Errorf("unauthorized")
 		}
-		secret := "my_secret_key" //os.Getenv("JWT_SECRET")
+		err := os.Setenv("JWT_SECRET", "my_secret_key")
+		if err != nil {
+			fmt.Println("failed to set env", err)
+			return nil, fmt.Errorf("unauthorized")
+		}
+		secret := os.Getenv("JWT_SECRET")
 		return []byte(secret), nil
 	})
 	if err != nil {
 		fmt.Println("failed to parse JWT token", err)
-		return fmt.Errorf("unauthorized")
+		return nil, fmt.Errorf("unauthorized")
 	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		fmt.Println(claims)
+	if !token.Valid {
+		fmt.Println("failed to parse JWT token, token is invalid")
+		return nil, fmt.Errorf("unauthorized")
 	}
-	return fmt.Errorf("unauthorized")
+	return token, nil
 }
