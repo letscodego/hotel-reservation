@@ -39,6 +39,14 @@ func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
 	}
 }
 
+func NewTestMongoUserStore(client *mongo.Client) *MongoUserStore {
+	coll := client.Database(TestDBNAME).Collection(userCollection)
+	return &MongoUserStore{
+		client:     client,
+		collection: coll,
+	}
+}
+
 func (s *MongoUserStore) Drop(ctx context.Context) error {
 	fmt.Println("--- dropping user test collection ---")
 	return s.collection.Drop(ctx)

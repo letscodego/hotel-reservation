@@ -60,7 +60,7 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 
 func createClaimsFromUser(user *types.User) string {
 	now := time.Now()
-	expirationTime := now.Add(time.Minute * 15)
+	expirationTime := now.Add(time.Minute * 25)
 	claims := &Claims{
 		Username: user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
